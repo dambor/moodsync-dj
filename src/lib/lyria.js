@@ -216,38 +216,44 @@ export class LyriaSession {
     if (!this.isPlaying) { this.isPlaying = true; this.onStatus("streaming"); }
   }
 
-  // Send playback_control command (PLAY, PAUSE, STOP)
+  // Send playbackControl command (PLAY, PAUSE, STOP)
   _sendPlayback(action) {
     if (!this.ws || !this.connected) return;
-    this.ws.send(JSON.stringify({
-      playback_control: action,
-    }));
+    const msg = { playbackControl: action };
+    console.log("[Lyria] Sending playback:", JSON.stringify(msg));
+    this.ws.send(JSON.stringify(msg));
   }
 
-  // Send weighted prompts via client_content
+  // Send weighted prompts via clientContent
   setPrompts(prompts) {
     if (!this.ws || !this.connected) return false;
     this.currentPrompts = prompts;
     try {
-      this.ws.send(JSON.stringify({
-        client_content: {
-          weighted_prompts: prompts.map(p => ({ text: p.text, weight: p.weight })),
+      const msg = {
+        clientContent: {
+          weightedPrompts: prompts.map(p => ({ text: p.text, weight: p.weight })),
         },
-      }));
+      };
+      console.log("[Lyria] Sending prompts:", JSON.stringify(msg));
+      this.ws.send(JSON.stringify(msg));
       return true;
     } catch (e) { this.onError(`Failed to set prompts: ${e.message}`); return false; }
   }
 
-  // Send music_generation_config
-  setGenerationConfig({ guidance, brightness, density } = {}) {
+  // Send musicGenerationConfig to update generation parameters
+  setGenerationConfig({ guidance, brightness, density, bpm, temperature } = {}) {
     if (!this.ws || !this.connected) return;
     const cfg = {};
     if (guidance !== undefined) cfg.guidance = guidance;
     if (brightness !== undefined) cfg.brightness = brightness;
     if (density !== undefined) cfg.density = density;
-    this.ws.send(JSON.stringify({
-      music_generation_config: cfg,
-    }));
+    if (bpm !== undefined) cfg.bpm = bpm;
+    if (temperature !== undefined) cfg.temperature = temperature;
+    const msg = {
+      musicGenerationConfig: cfg,
+    };
+    console.log("[Lyria] Sending config:", JSON.stringify(msg));
+    this.ws.send(JSON.stringify(msg));
   }
 
   play() {
